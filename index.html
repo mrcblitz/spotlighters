@@ -2395,16 +2395,53 @@ function renderCharList() {
     el.innerHTML = '<div class="empty-state">No characters yet. Create one!</div>';
     return;
   }
-  el.innerHTML = state.characters.map(c => `
-    <div class="char-card ${c.id===state.selectedCharId?'selected':''}" onclick="selectCharacter('${c.id}')">
-      <div class="char-portrait">${c.concept.includes('Brick')?'🧱':c.concept.includes('Blaster')?'⚡':c.concept.includes('Mental')?'🔮':'🦸'}</div>
-      <div style="flex:1">
-        <div class="char-name">${c.heroName || c.name}${c.heroName ? ' <span style="font-size:11px;color:var(--text2);font-weight:400">(' + c.name + ')</span>' : ''}</div>
-        <div class="char-meta">${c.concept || 'No concept'} · ${c.cpBudget} CP</div>
-      </div>
-      <div class="char-meta">${calcSpent(c)}/${c.cpBudget} CP</div>
-    </div>
-  `).join('');
+  el.innerHTML = '';
+  state.characters.forEach(function(c) {
+    const portrait = localStorage.getItem('champions_portrait_' + c.id);
+    const fallbackEmoji = c.concept && c.concept.includes('Brick') ? '🧱'
+      : c.concept && c.concept.includes('Blaster') ? '⚡'
+      : c.concept && c.concept.includes('Mental') ? '🔮' : '🦸';
+
+    const card = document.createElement('div');
+    card.className = 'char-card' + (c.id === state.selectedCharId ? ' selected' : '');
+    card.setAttribute('data-char-id', c.id);
+
+    const thumb = document.createElement('div');
+    thumb.className = 'char-portrait';
+    thumb.style.overflow = 'hidden';
+    if (portrait) {
+      const img = document.createElement('img');
+      img.src = portrait;
+      img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block';
+      thumb.appendChild(img);
+    } else {
+      thumb.style.fontSize = '22px';
+      thumb.textContent = fallbackEmoji;
+    }
+
+    const info = document.createElement('div');
+    info.style.flex = '1';
+    const nameEl = document.createElement('div');
+    nameEl.className = 'char-name';
+    nameEl.innerHTML = (c.heroName || c.name) +
+      (c.heroName ? ' <span style="font-size:11px;color:var(--text2);font-weight:400">(' + c.name + ')</span>' : '');
+    const metaEl = document.createElement('div');
+    metaEl.className = 'char-meta';
+    metaEl.textContent = (c.concept || 'No concept') + ' \u00b7 ' + c.cpBudget + ' CP';
+    info.appendChild(nameEl);
+    info.appendChild(metaEl);
+
+    const cpEl = document.createElement('div');
+    cpEl.className = 'char-meta';
+    cpEl.textContent = calcSpent(c) + '/' + c.cpBudget + ' CP';
+
+    card.appendChild(thumb);
+    card.appendChild(info);
+    card.appendChild(cpEl);
+
+    card.addEventListener('click', function() { selectCharacter(c.id); });
+    el.appendChild(card);
+  });
 }
 
 function getChar() {
